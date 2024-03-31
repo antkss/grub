@@ -72,12 +72,41 @@ fi
 fi
 
 if loadfont $font ; then
-  set gfxmode=auto
+  set gfxmode=1920x1080,auto
   load_video
   insmod gfxterm
 fi
+GRUB_GFXMODE=1920x1080,auto
+GRUB_GFXPAYLOAD_LINUX=keep
 terminal_input console
 terminal_output gfxterm
+insmod part_gpt
+insmod ext2
+insmod gfxmenu
+set root='hd0,gpt1'
+	if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  DA3E-987F
+	else
+	  search --no-floppy --fs-uuid --set=root DA3E-987F
+	fi
+
+GRUB_BACKGROUND="/grub/themes/whitesur/background.jpg"
+GRUB_THEME="/grub/themes/whitesur/theme.txt"
+
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_12.pf2
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_14.pf2
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_16.pf2
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_24.pf2
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_32.pf2
+loadfont ($root)/grub/themes/whitesur/dejavu_sans_48.pf2
+loadfont ($root)/grub/themes/whitesur/terminus-12.pf2
+loadfont ($root)/grub/themes/whitesur/terminus-14.pf2
+loadfont ($root)/grub/themes/whitesur/terminus-16.pf2
+loadfont ($root)/grub/themes/whitesur/terminus-18.pf2
+insmod jpeg
+insmod png
+set theme=($root)/grub/themes/whitesur/theme.txt
+export theme
 if [ x$feature_timeout_style = xy ] ; then
   set timeout_style=menu
   set timeout=5
@@ -86,10 +115,134 @@ if [ x$feature_timeout_style = xy ] ; then
 else
   set timeout=5
 fi
-### END /etc/grub.d/00_header ###
+### END /etc/grub.d/00_header ###\
+########fedora configuration#####################
 
 ### BEGIN /etc/grub.d/10_linux ###
-menuentry 'ARCH LINUX' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+menuentry 'ARCH ' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod fat
+	set root='hd0,gpt2'
+	search --no-floppy --fs-uuid --set=root 507aee1f-def8-4c70-aacf-94b3c4130d1d
+	echo	'Loading Linux ... '
+	linux	/boot/vmlinuz-linux-xanmod-clang-v3 root=UUID=507aee1f-def8-4c70-aacf-94b3c4130d1d mitigations=off  rw  loglevel=3 psi=1 noaslr
+	echo	'Loading initial ramdisk ...'
+	initrd	/boot/intel-ucode.img /boot/initramfs-linux-xanmod-clang-v3.img
+}
+
+# menuentry "debian.img" {
+#   insmod ext2
+#   search --no-floppy --fs-uuid --set root  507aee1f-def8-4c70-aacf-94b3c4130d1d
+#   set isofile="/.debian/.da.img"
+#   loopback loop $isofile
+#   linux (loop)/boot/vmlinuz-6.6.14-x64v3-xanmod1 archisolabel=ARCH_202103 img_dev=/dev/sda2 img_loop=$isofile earlymodules=loop root=UUID=3a5ea936-3fb1-4184-a026-9d881a5a150e
+#   initrd (loop)/boot/initrd.img-6.6.14-x64v3-xanmod1
+# }
+menuentry "archlinux.iso" {
+  insmod ext2
+  search --no-floppy --fs-uuid --set root AA9CC7779CC73C97
+  set isofile="/Downloads/arch.iso"
+  loopback loop $isofile
+  linux (loop)/arch/boot/x86_64/vmlinuz-linux archisolabel=ARCH_202103 img_dev=/dev/sdb1 img_loop=$isofile earlymodules=loop
+  initrd (loop)/arch/boot/x86_64/initramfs-linux.img
+}
+menuentry 'fedora'  --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod fat
+	search --no-floppy --fs-uuid --set root 507aee1f-def8-4c70-aacf-94b3c4130d1d
+	echo	'Loading Linux linux-linux-clear-ltscurrent ...'
+	linux	/boot/vmlinuz-5.15.78-xm1.0.fc38.x86_64 root=UUID=507aee1f-def8-4c70-aacf-94b3c4130d1d rw  loglevel=3  mitigations=off
+	echo	'Loading initial ramdisk ...'
+	initrd	 /boot/initramfs-5.15.78-xm1.0.fc38.x86_64.img 
+}
+menuentry 'windows 10' --class windows {
+ insmod part_gpt
+  insmod ntfs
+  insmod chain
+set root='hd1,gpt1'
+	if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt1 --hint-efi=hd1,gpt1 --hint-baremetal=ahci0,gpt1  9C59-CCF4
+	else
+	  search --no-floppy --fs-uuid --set=root 9C59-CCF4
+	fi
+
+
+
+chainloader /efi/Microsoft/Boot/bootmgfw.efi
+
+
+
+}
+
+
+
+menuentry 'debian' --class debian --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod fat
+	search --no-floppy --fs-uuid --set root 507aee1f-def8-4c70-aacf-94b3c4130d1d
+	echo	'Loading Linux linux-linux-clear-ltscurrent ...'
+	linux	/boot/vmlinuz root=UUID=507aee1f-def8-4c70-aacf-94b3c4130d1d psi=1 rw  loglevel=3 quiet mitigations=off
+	echo	'Loading initial ramdisk ...'
+	initrd	 /boot/initrd.img
+}
+
+### END ARCH
+#menuentry 'win10peiso' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+#	load_video
+#	set gfxpayload=keep
+#	insmod gzio
+#	insmod part_gpt
+#	insmod fat
+#	insmod chain
+#j	set root=(hd0,gpt2)
+#loopback loop /home/as/backup/win10peiso
+#chainloader (loop)/EFI/BOOT/BOOTX64.EFI
+#}
+
+
+
+menuentry 'memtest86+' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod fat
+	insmod chain
+	set root='hd0,gpt1'
+	if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  DA3E-987F
+	else
+	  search --no-floppy --fs-uuid --set=root DA3E-987F
+	fi
+chainloader /memtest86+/memtest.efi
+}
+
+menuentry 'memtest86+' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod fat
+	insmod chain
+	set root='hd0,gpt1'
+	if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd0,gpt1 --hint-efi=hd0,gpt1 --hint-baremetal=ahci0,gpt1  DA3E-987F
+	else
+	  search --no-floppy --fs-uuid --set=root DA3E-987F
+	fi
+chainloader /memtest86+/memtest.efi
+}
+### BEGIN 
+menuentry 'ARCH clear' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
 	load_video
 	set gfxpayload=keep
 	insmod gzio
@@ -101,45 +254,17 @@ menuentry 'ARCH LINUX' --class arch --class gnu-linux --class gnu --class os $me
 	else
 	  search --no-floppy --fs-uuid --set=root DA3E-987F
 	fi
-	echo	'Loading Linux linux ...'
-	linux	/vmlinuz-linux-clear-ltscurrent  root=/dev/sda2 psi=1 rw quiet  loglevel=3 
+	echo	'Loading Linux linux-linux-clear-ltscurrent ...'
+	linux	/vmlinuz-clear root=UUID=507aee1f-def8-4c70-aacf-94b3c4130d1d psi=1 rw  loglevel=3 quiet
 	echo	'Loading initial ramdisk ...'
-	initrd	/intel-ucode.img /initramfs-linux-clear-ltscurrent.img
-}
-menuentry 'DEBIAN' --class debian --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
-	load_video
-	set gfxpayload=keep
-	insmod gzio
-	insmod part_gpt
-	insmod fat
-	loopback loop (hd0,gpt2)/debian.img
-	echo	'Loading Linux linux ...'
-	linux	(loop)/boot/vmlinuz-6.1.62-x64v3xanmod1 init="/sbin/init" root=(loop)  rw  loglevel=3 
-	echo	'Loading initial ramdisk ...'
-	initrd	(loop)/boot/initrd.img-6.1.62-x64v3-xanmod1
-}
-menuentry 'ANDROID' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
-	load_video
-	set gfxpayload=keep
-	insmod gzio
-	insmod part_gpt
-	insmod fat
-	set root='hd0,gpt2'
-	echo	'Loading android ...'
-	linux	/android/kernel root=/dev/sda2 rw  loglevel=3 
-	echo	'Loading initial ramdisk ...'
-	initrd	/android/initrd.img
+	initrd	/intel-ucode.img /initramfs-linux-clear.img
 }
 
-menuentry 'win11' --class windows  {
-	load_video
-	set gfxpayload=keep
-	insmod gzio
-	insmod part_gpt
-	insmod fat
-	set root='hd1,gpt2'
 
-}
+
+### END
+
+
 
 submenu 'Advanced options for Arch Linux' $menuentry_id_option 'gnulinux-advanced-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
 	menuentry 'Arch Linux, with Linux linux-clear-ltscurrent' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-linux-clear-ltscurrent-advanced-507aee1f-def8-4c70-aacf-94b3c4130d1d' {
